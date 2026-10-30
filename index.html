@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>חידון קולי 🎤</title>
+<link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+  :root{--bg:#0f1226;--card:#1a1f3d;--ink:#f2f3ff;--muted:#a9addb;--accent:#7c6cff;--accent2:#ffb84d;--ok:#22c55e;--bad:#ef4444;--line:#2f3566}
+  *{box-sizing:border-box}
+  body{margin:0;min-height:100vh;font-family:Rubik,system-ui,sans-serif;background:radial-gradient(circle at 20% 0%,#2a2463 0%,var(--bg) 60%);color:var(--ink);display:flex;justify-content:center;padding:24px 16px;transition:background .3s}
+  body.ok{background:radial-gradient(circle at 50% 30%,#14532d 0%,var(--bg) 75%)}
+  body.bad{background:radial-gradient(circle at 50% 30%,#7f1d1d 0%,var(--bg) 75%)}
+  .wrap{width:100%;max-width:620px}
+  h1{font-size:2rem;margin:8px 0 4px;font-weight:800}
+  .sub{color:var(--muted);margin:0 0 22px}
+  .card{background:var(--card);border-radius:20px;padding:24px;box-shadow:0 10px 40px rgba(0,0,0,.35)}
+  label{display:block;font-weight:600;margin:0 0 8px}
+  input[type=text],input[type=password]{width:100%;font:inherit;font-size:1.1rem;padding:13px 15px;border-radius:12px;border:2px solid var(--line);background:#11152e;color:var(--ink);outline:none}
+  input:focus{border-color:var(--accent)}
+  .row{display:flex;gap:12px;margin-top:16px;flex-wrap:wrap}
+  .row>div{flex:1;min-width:140px}
+  select{width:100%;font:inherit;padding:12px;border-radius:12px;border:2px solid var(--line);background:#11152e;color:var(--ink)}
+  .chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+  .chip{background:#252b55;border:none;color:var(--ink);padding:8px 12px;border-radius:999px;font:inherit;font-size:.9rem;cursor:pointer}
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;font:inherit;font-weight:700;font-size:1.1rem;border:none;border-radius:14px;padding:14px 20px;cursor:pointer;background:var(--accent);color:#fff}
+  .btn:active{transform:scale(.97)}
+  .btn.ghost{background:#252b55}
+  .btn.big{width:100%;margin-top:20px;font-size:1.25rem;padding:16px}
+  .btn:disabled{opacity:.45;cursor:default}
+  details{margin-top:18px;background:#141936;border-radius:12px;padding:12px 14px}
+  summary{cursor:pointer;font-weight:600}
+  .note{color:var(--muted);font-size:.85rem;margin-top:8px;line-height:1.5}
+  .err{color:#fca5a5;margin-top:12px;font-weight:600}
+  .top{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;gap:8px}
+  .pill{background:#252b55;border-radius:999px;padding:6px 14px;font-weight:600}
+  .progress{height:8px;background:#252b55;border-radius:99px;overflow:hidden;margin-bottom:22px}
+  .progress>i{display:block;height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));width:0;transition:width .3s}
+  .q{font-size:1.5rem;font-weight:700;line-height:1.45;margin:0 0 26px;text-align:center}
+  .micwrap{display:flex;flex-direction:column;align-items:center;gap:12px}
+  .mic{width:130px;height:130px;border-radius:50%;border:none;background:var(--accent);color:#fff;font-size:3.2rem;cursor:pointer;box-shadow:0 8px 30px rgba(124,108,255,.45);transition:background .2s}
+  .mic.listening{background:var(--bad);animation:pulse 1.1s infinite}
+  .mic:disabled{opacity:.4;cursor:default;animation:none}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(239,68,68,.6)}100%{box-shadow:0 0 0 28px rgba(239,68,68,0)}}
+  .status{color:var(--muted);min-height:1.4em;text-align:center}
+  .heard{font-size:1.25rem;font-weight:600;min-height:1.6em;text-align:center}
+  .typed{display:flex;gap:8px;width:100%;margin-top:6px}
+  .typed input{flex:1}
+  .result{margin-top:20px;padding:18px;border-radius:14px;text-align:center;font-size:1.25rem;font-weight:700;display:none}
+  .result.ok{display:block;background:rgba(34,197,94,.18);color:#86efac;border:2px solid var(--ok)}
+  .result.bad{display:block;background:rgba(239,68,68,.18);color:#fca5a5;border:2px solid var(--bad)}
+  .result small{display:block;font-weight:400;color:var(--ink);opacity:.8;margin-top:8px;font-size:1rem}
+  .actions{display:flex;gap:10px;margin-top:18px;flex-wrap:wrap}
+  .actions .btn{flex:1}
+  .link{background:none;border:none;color:var(--muted);text-decoration:underline;font:inherit;cursor:pointer;font-size:.9rem;margin-top:8px}
+  .center{text-align:center}
+  .score{font-size:3.5rem;font-weight:800;margin:10px 0}
+  .spinner{width:48px;height:48px;border:5px solid var(--line);border-top-color:var(--accent);border-radius:50%;animation:spin 1s linear infinite;margin:20px auto}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .topics{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px}
+  .topic{font:inherit;font-size:1.05rem;font-weight:600;padding:16px 10px;border-radius:14px;border:2px solid var(--line);background:#11152e;color:var(--ink);cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:6px}
+  .topic span{font-size:2rem}
+  .topic.sel{border-color:var(--accent);background:rgba(124,108,255,.18)}
+  .btn.nudge{background:var(--accent2);color:#1a1300;animation:pulse2 1s infinite}
+  @keyframes pulse2{0%{box-shadow:0 0 0 0 rgba(255,184,77,.7)}100%{box-shadow:0 0 0 16px rgba(255,184,77,0)}}
+  .hidden{display:none!important}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>🎤 חידון קולי</h1>
+  <p class="sub">השאלה מוקראת — אתה לוחץ על המיקרופון ועונה בקול.</p>
+
+  <!-- setup -->
+  <div class="card" id="setup">
+    <label>בחר נושא</label>
+    <div class="topics" id="topics"></div>
+    <div class="row">
+      <div><label for="count">כמה שאלות</label>
+        <select id="count"><option>5</option><option selected>10</option><option>15</option></select></div>
+    </div>
+    <button class="btn big" id="start">יאללה, מתחילים!</button>
+    <div class="err" id="err"></div>
+    <div class="note" id="envNote"></div>
+  </div>
+
+  <!-- game -->
+  <div class="card hidden" id="game">
+    <div class="top">
+      <span class="pill" id="qnum"></span>
+      <span class="pill" id="scorePill">⭐ 0</span>
+      <button class="btn ghost" id="repeat" title="הקרא">🔊 הקרא</button>
+    </div>
+    <div class="progress"><i id="bar"></i></div>
+    <div class="note hidden" id="voiceNote" style="margin:0 0 16px;background:#3a2a10;padding:10px 12px;border-radius:10px;color:#ffd79a"></div>
+    <p class="q" id="question"></p>
+
+    <div class="micwrap" id="answerArea">
+      <button class="mic" id="mic" aria-label="לחץ ודבר">🎤</button>
+      <div class="status" id="status">לחץ על המיקרופון ותגיד את התשובה</div>
+      <div class="heard" id="heard"></div>
+      <div class="typed hidden" id="typedBox">
+        <input type="text" id="typed" placeholder="לחץ כאן ואז על 🎤 במקלדת" autocomplete="off" enterkeyhint="send">
+        <button class="btn" id="sendTyped">שלח</button>
+      </div>
+      <div class="note center hidden" id="kbdHint">לחץ על התיבה, ואז על המיקרופון 🎤 שבמקלדת ותגיד את התשובה.</div>
+    </div>
+
+    <div class="result" id="result"></div>
+    <div class="center"><button class="link hidden" id="override">בעצם צדקתי 🙋</button></div>
+    <div class="actions"><button class="btn hidden" id="next">הבא ←</button></div>
+  </div>
+
+  <!-- results -->
+  <div class="card center hidden" id="results">
+    <div style="font-size:3rem" id="emoji"></div>
+    <div class="score" id="final"></div>
+    <p id="msg"></p>
+    <div class="actions">
+      <button class="btn" id="again">עוד סיבוב באותו נושא</button>
+      <button class="btn ghost" id="newTopic">נושא חדש</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const screens = ["setup","game","results"];
+const show = n => screens.forEach(s => $(s).classList.toggle("hidden", s !== n));
+
+const BANK = {
+ "חלל": {e:"🚀", q:[
+  ["איזה כוכב לכת הכי קרוב לשמש?","חמה",["כוכב חמה","מרקורי"]],
+  ["מה כוכב הלכת הגדול ביותר במערכת השמש?","צדק",["כוכב צדק","יופיטר"]],
+  ["איזה כוכב לכת מכונה הכוכב האדום?","מאדים",["מארס","מרס"]],
+  ["כמה כוכבי לכת יש במערכת השמש?","8",["שמונה"]],
+  ["מי היה האדם הראשון שהלך על הירח?","ניל ארמסטרונג",["ארמסטרונג","ארמסטרונג ניל"]],
+  ["מי היה האסטרונאוט הישראלי הראשון?","אילן רמון",["רמון"]],
+  ["לאיזה כוכב לכת יש טבעות מפורסמות?","שבתאי",["סטורן","כוכב שבתאי"]],
+  ["איך נקראת הגלקסיה שלנו?","שביל החלב",["שביל חלב","milky way"]],
+  ["מה שם סוכנות החלל של ארצות הברית?","נאסא",["נאס\"א","נסא","נאסה","nasa"]],
+  ["כמה זמן לוקח לכדור הארץ להקיף את השמש?","שנה",["שנה אחת","365","365 יום","365 ימים"]],
+  ["איזה כוכב לכת הכי חם במערכת השמש?","נוגה",["ונוס","כוכב נוגה"]],
+  ["איזה כוכב לכת הכי רחוק מהשמש?","נפטון",["נפטון","נפטונה"]],
+  ["איזה כוכב ננסי נחשב פעם לכוכב הלכת התשיעי?","פלוטו",[]],
+  ["מי היה האדם הראשון בחלל?","יורי גגרין",["גגרין","גגארין","יורי גגארין"]],
+  ["איזה כוכב נמצא במרכז מערכת השמש?","השמש",["שמש"]]
+ ]},
+ "בעלי חיים": {e:"🦁", q:[
+  ["מה היונק הגדול ביותר בעולם?","לווייתן כחול",["לוויתן כחול","הלווייתן הכחול","לווייתן","לוויתן"]],
+  ["מה החיה היבשתית המהירה ביותר?","ברדלס",["צ'יטה","ציטה","צייטה"]],
+  ["כמה רגליים יש לעכביש?","8",["שמונה"]],
+  ["כמה רגליים יש לחרק?","6",["שש","שישה"]],
+  ["לאיזו חיה יש את הצוואר הארוך ביותר?","ג'ירפה",["גירפה","גיראפה","ג'ירף"]],
+  ["מה אוכלת הפנדה בעיקר?","במבוק",["במבוקים"]],
+  ["איזו חיה מכונה מלך החיות?","אריה",["האריה"]],
+  ["מה העוף הגדול ביותר בעולם?","יען",["היען"]],
+  ["כמה זרועות יש לתמנון?","8",["שמונה"]],
+  ["איזה יונק יודע לעוף?","עטלף",["העטלף","עטלפים"]],
+  ["באיזו יבשת חי הקנגורו?","אוסטרליה",[]],
+  ["איזו חיה משנה את הצבע שלה כדי להסתתר?","זיקית",["הזיקית"]],
+  ["לאיזו חיה יש חדק?","פיל",["הפיל","פילים"]],
+  ["מה הדבורים מייצרות?","דבש",["דבש ושעווה"]],
+  ["איך נקרא תינוק של כלב?","גור",["גור כלבים","כלבלב","גורים"]]
+ ]},
+ "כדורגל": {e:"⚽", q:[
+  ["כמה שחקנים יש לכל קבוצה על המגרש?","11",["אחד עשר","אחת עשרה"]],
+  ["כמה דקות נמשך משחק כדורגל רגיל?","90",["תשעים"]],
+  ["איזו מדינה זכתה במונדיאל 2022?","ארגנטינה",[]],
+  ["באיזו מדינה נערך מונדיאל 2022?","קטאר",["קטר","קאטר"]],
+  ["מאיזו מדינה ליונל מסי?","ארגנטינה",[]],
+  ["מאיזו מדינה כריסטיאנו רונאלדו?","פורטוגל",[]],
+  ["מאיזו מדינה קיליאן אמבפה?","צרפת",[]],
+  ["איזה צבע כרטיס מקבל שחקן שמורחק מהמשחק?","אדום",["כרטיס אדום"]],
+  ["איזו מדינה זכתה הכי הרבה פעמים במונדיאל?","ברזיל",[]],
+  ["איך קוראים לגול שמבקיעים לרשת של הקבוצה שלך?","גול עצמי",["שער עצמי"]],
+  ["איזה שחקן מותר לו לגעת בכדור בידיים?","השוער",["שוער"]],
+  ["איך נקראת הליגה הבכירה באנגליה?","פרמייר ליג",["הפרמייר ליג","פרימייר ליג","premier league"]],
+  ["איך נקראת בעיטה מנקודת אחת עשרה מטר?","פנדל",["בעיטת פנדל","פנדלים","בעיטת 11 מטר"]],
+  ["באיזו עיר משחקת ברצלונה?","ברצלונה",[]]
+ ]},
+ "בירות העולם": {e:"🌍", q:[
+  ["מה בירת צרפת?","פריז",["פאריז","פריס"]],
+  ["מה בירת איטליה?","רומא",[]],
+  ["מה בירת בריטניה?","לונדון",[]],
+  ["מה בירת יפן?","טוקיו",[]],
+  ["מה בירת ספרד?","מדריד",[]],
+  ["מה בירת גרמניה?","ברלין",[]],
+  ["מה בירת ארצות הברית?","וושינגטון",["ושינגטון","וושינגטון די סי"]],
+  ["מה בירת מצרים?","קהיר",["קאהיר"]],
+  ["מה בירת יוון?","אתונה",[]],
+  ["מה בירת רוסיה?","מוסקבה",[]],
+  ["מה בירת אוסטרליה?","קנברה",["קנבררה"]],
+  ["מה בירת קנדה?","אוטווה",["אוטאווה"]],
+  ["מה בירת תאילנד?","בנגקוק",["באנגקוק"]],
+  ["מה בירת סין?","בייג'ינג",["בייגינג","בייג'ין","בייגין","פקין"]],
+  ["מה בירת ברזיל?","ברזיליה",[]]
+ ]},
+ "ישראל": {e:"🇮🇱", q:[
+  ["מה בירת ישראל?","ירושלים",["ירושלם"]],
+  ["מי היה ראש הממשלה הראשון של ישראל?","דוד בן גוריון",["בן גוריון"]],
+  ["מי היה הנשיא הראשון של ישראל?","חיים ויצמן",["ויצמן"]],
+  ["באיזו שנה הוקמה מדינת ישראל?","1948",["תש\"ח","תשח","אלף תשע מאות ארבעים ושמונה"]],
+  ["מה שם האגם הגדול בצפון ישראל?","הכנרת",["כנרת","כינרת","ים כנרת","ים הכנרת"]],
+  ["איזה ים הוא המקום הנמוך ביותר בעולם?","ים המלח",["ים מלח"]],
+  ["מה העיר הדרומית ביותר בישראל?","אילת",["אילת"]],
+  ["איך נקרא המדבר הגדול בדרום ישראל?","הנגב",["נגב"]],
+  ["מה שם ההמנון של ישראל?","התקווה",["תקווה","התקוה"]],
+  ["אילו צבעים יש בדגל ישראל?","כחול ולבן",["כחול לבן","לבן וכחול","לבן כחול"]],
+  ["מה המטבע של ישראל?","שקל",["שקל חדש","שקלים","ש\"ח"]],
+  ["באיזה חג מדליקים חנוכייה?","חנוכה",[]],
+  ["באיזה חג אוכלים מצות?","פסח",[]],
+  ["איזה ים נמצא במערב ישראל?","הים התיכון",["ים תיכון","התיכון"]],
+  ["מה העיר הגדולה ביותר בישראל?","ירושלים",["ירושלם"]]
+ ]},
+ "מדע": {e:"🔬", q:[
+  ["בכמה מעלות צלזיוס מים רותחים?","100",["מאה"]],
+  ["בכמה מעלות צלזיוס מים קופאים?","0",["אפס"]],
+  ["איזה גז אנחנו צריכים לנשום כדי לחיות?","חמצן",["החמצן"],["פחמן"]],
+  ["איזה גז הצמחים קולטים מהאוויר?","פחמן דו חמצני",["co2","פחמן דו-חמצני"]],
+  ["איזה איבר שואב ומזרים דם בגוף?","הלב",["לב"]],
+  ["כמה עצמות יש בגוף של אדם מבוגר?","206",["מאתיים ושש","מאתיים שש"]],
+  ["מה האיבר הגדול ביותר בגוף?","העור",["עור"]],
+  ["לפי הסיפור, על איזה מדען נפל תפוח והוא גילה את חוק הכבידה?","ניוטון",["אייזק ניוטון","ניוטן"]],
+  ["כמה צבעים יש בקשת?","7",["שבעה","שבע"]],
+  ["איזו מתכת היא נוזל בטמפרטורת החדר?","כספית",["הכספית"]],
+  ["איך נקרא התהליך שבו צמחים מייצרים מזון מאור השמש?","פוטוסינתזה",["הטמעה","פוטוסינטזה"]],
+  ["מה החומר הקשה ביותר בטבע?","יהלום",["יהלומים"]],
+  ["עם איזה איבר אנחנו חושבים?","המוח",["מוח"]],
+  ["איזה כוח מושך דברים לכיוון כדור הארץ?","כוח המשיכה",["כבידה","הכבידה","גרוויטציה","כוח משיכה"]],
+  ["כמה שיניים יש לאדם מבוגר, כולל שיני בינה?","32",["שלושים ושתיים","שלושים ושניים"]]
+ ]}
+};
+
+const MIX = "ערבוב";
+let topic = "";
+[...Object.keys(BANK), MIX].forEach(t=>{
+  const b=document.createElement("button"); b.className="topic";
+  b.innerHTML = `<span>${t===MIX?"🎲":BANK[t].e}</span>${t}`;
+  b.onclick=()=>{ topic=t; [...$("topics").children].forEach(c=>c.classList.toggle("sel", c===b)); $("err").textContent=""; };
+  $("topics").appendChild(b);
+});
+function shuffle(a){ a=[...a]; for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+
+/* ---------------- speech out ---------------- */
+const synth = window.speechSynthesis;
+let heVoice = null, voicesLoaded = false, curUtter = null;
+function pickVoice(){
+  if(!synth) return;
+  const vs = synth.getVoices();
+  if (vs.length) voicesLoaded = true;
+  heVoice = vs.find(v=>/^(he|iw)/i.test(v.lang)) || null;
+  updateVoiceNote();
+}
+function updateVoiceNote(){
+  const el = document.getElementById("voiceNote"); if(!el) return;
+  if (!synth){ el.innerHTML = "⚠️ הדפדפן הזה לא יודע להקריא. נסה בכרום או בספארי."; el.classList.remove("hidden"); return; }
+  if (voicesLoaded && !heVoice){
+    el.innerHTML = "⚠️ אין במכשיר קול בעברית, לכן ההקראה לא עובדת.<br>"+
+      "<b>אייפון:</b> הגדרות ← נגישות ← תוכן מדובר ← קולות ← עברית.<br>"+
+      "<b>אנדרואיד:</b> הגדרות ← המרת טקסט לדיבור ← מנוע Google ← התקן עברית.<br>"+
+      "<b>ווינדוס:</b> הגדרות ← זמן ושפה ← דיבור ← הוסף קול עברית.";
+    el.classList.remove("hidden");
+  } else el.classList.add("hidden");
+}
+if (synth){ pickVoice(); synth.onvoiceschanged = pickVoice; setTimeout(pickVoice, 1500); }
+function speakHint(on){
+  const r = document.getElementById("repeat"); if(!r) return;
+  r.classList.toggle("nudge", !!on);
+  if (on) document.getElementById("status").textContent = "👆 לחץ על 🔊 כדי לשמוע את השאלה";
+}
+function say(text){
+  return new Promise(res=>{
+    if(!synth){ res(); return; }
+    let done=false; const fin=()=>{ if(!done){ done=true; res(); } };
+    try{
+      if (synth.speaking || synth.pending) synth.cancel();
+      const u = new SpeechSynthesisUtterance(text);
+      curUtter = u;                       // keep a reference (Chrome bug)
+      u.lang="he-IL"; if(heVoice) u.voice=heVoice; u.rate=0.95;
+      let started=false;
+      u.onstart=()=>{ started=true; speakHint(false); };
+      u.onend=fin;
+      u.onerror=e=>{ if(e.error!=="interrupted" && e.error!=="canceled") speakHint(true); fin(); };
+      setTimeout(()=>{ try{ synth.resume(); synth.speak(u); }catch(e){ fin(); } }, 80);
+      setTimeout(()=>{ if(!started && !done){ speakHint(true); fin(); } }, 2500);
+      setTimeout(fin, 6000 + text.length*150);
+    }catch(e){ fin(); }
+  });
+}
+
+/* ---------------- speech in ---------------- */
+let inFrame = false; try{ inFrame = window.self !== window.top; }catch(e){ inFrame = true; }
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+let rec = null, listening = false, micBlocked = false;
+const notes = [];
+if (!SR) notes.push("⚠️ הדפדפן הזה לא תומך בזיהוי דיבור. עונים דרך המיקרופון של המקלדת 🎤 או בהקלדה.");
+if (!inFrame && location.protocol === "file:") notes.push("טיפ: אם המיקרופון לא עובד מקובץ מקומי, העלה את הקובץ לאתר (למשל Netlify Drop) ופתח משם.");
+$("envNote").innerHTML = notes.join("<br>");
+
+function listen(){
+  if (!SR || listening || answered) return;
+  if (synth) synth.cancel();
+  rec = new SR();
+  rec.lang = "he-IL"; rec.interimResults = true; rec.maxAlternatives = 5; rec.continuous = false;
+  let finalAlts = [], interim = "";
+  rec.onstart = () => { listening = true; $("mic").classList.add("listening"); $("status").textContent = "מקשיב… דבר עכשיו"; $("heard").textContent=""; };
+  rec.onresult = e => {
+    interim = "";
+    for (let i=e.resultIndex;i<e.results.length;i++){
+      const r = e.results[i];
+      if (r.isFinal){ finalAlts = [...r].map(a=>a.transcript.trim()).filter(Boolean); }
+      else interim += r[0].transcript;
+    }
+    $("heard").textContent = finalAlts[0] || interim;
+  };
+  rec.onerror = e => {
+    if (e.error === "not-allowed" || e.error === "service-not-allowed" || e.error === "audio-capture"){
+      micBlocked = true;
+      $("status").textContent = "אין גישה למיקרופון — אפשר לענות דרך המיקרופון של המקלדת 🎤";
+      $("typedBox").classList.remove("hidden"); $("kbdHint").classList.remove("hidden");
+    } else if (e.error === "no-speech"){
+      $("status").textContent = "לא שמעתי כלום 🙉 לחץ ונסה שוב";
+    } else {
+      $("status").textContent = "בעיה בזיהוי (" + e.error + "). נסה שוב או כתוב.";
+      $("typedBox").classList.remove("hidden");
+    }
+  };
+  rec.onend = () => {
+    listening = false; $("mic").classList.remove("listening");
+    const alts = finalAlts.length ? finalAlts : (interim.trim() ? [interim.trim()] : []);
+    if (alts.length && !answered) submit(alts);
+    else if (!answered && !/אין גישה|בעיה/.test($("status").textContent)) $("status").textContent = "לחץ על המיקרופון ותגיד את התשובה";
+  };
+  setTimeout(()=>{ if(!listening && !answered && !micBlocked && $("status").textContent.indexOf("מקשיב")<0){ micBlocked=true; $("status").textContent="המיקרופון לא נפתח — אפשר לענות דרך המיקרופון של המקלדת 🎤 או בהקלדה"; $("typedBox").classList.remove("hidden"); $("kbdHint").classList.remove("hidden"); } }, 4000);
+  try{ rec.start(); }catch(e){ micBlocked=true; $("status").textContent="המיקרופון לא זמין כאן — אפשר לענות דרך המיקרופון של המקלדת 🎤 או בהקלדה"; $("typedBox").classList.remove("hidden"); $("kbdHint").classList.remove("hidden"); }
+}
+$("mic").onclick = () => { if (listening && rec) rec.stop(); else listen(); };
+$("sendTyped").onclick = () => { const v=$("typed").value.trim(); if(v) submit([v]); };
+$("typed").addEventListener("keydown", e=>{ if(e.key==="Enter") $("sendTyped").click(); });
+
+/* ---------------- local matching ---------------- */
+function norm(s){
+  return (s||"").toLowerCase()
+    .replace(/[֑-ׇ]/g,"")          // ניקוד וטעמים
+    .replace(/[ךםןףץ]/g,c=>({"ך":"כ","ם":"מ","ן":"נ","ף":"פ","ץ":"צ"}[c]))
+    .replace(/[^\p{L}\p{N}\s]/gu," ")
+    .replace(/\s+/g," ").trim();
+}
+function stripPrefix(w){ return w.length>3 ? w.replace(/^(וה|שה|וב|ול|ה|ו|ב|ל|ש|מ)/,"") : w; }
+function lev(a,b){
+  const m=a.length,n=b.length; if(!m) return n; if(!n) return m;
+  let p=[...Array(n+1).keys()];
+  for(let i=1;i<=m;i++){ const c=[i]; for(let j=1;j<=n;j++) c[j]=Math.min(p[j]+1,c[j-1]+1,p[j-1]+(a[i-1]===b[j-1]?0:1)); p=c; }
+  return p[n];
+}
+function sim(a,b){ return 1 - lev(a,b)/Math.max(a.length,b.length,1); }
+function localMatch(q, saidList){
+  const targets = [q.a, ...(q.accept||[])].map(norm).filter(Boolean);
+  for (const said of saidList.map(norm)){
+    if ((q.reject||[]).some(r=>said.includes(norm(r)))) continue;
+    const words = said.split(" ");
+    const loose = words.map(stripPrefix).join(" ");
+    for (const t of targets){
+      const tl = t.split(" ").map(stripPrefix).join(" ");
+      if (said===t || loose===tl) return true;
+      if ((" "+said+" ").includes(" "+t+" ") || (" "+loose+" ").includes(" "+tl+" ")) return true;
+      // fuzzy on same-length word windows
+      const k = tl.split(" ").length;
+      const lw = loose.split(" ");
+      for (let i=0;i+k<=lw.length;i++){
+        if (sim(lw.slice(i,i+k).join(" "), tl) >= (tl.length<=4 ? 0.75 : 0.8)) return true;
+      }
+    }
+  }
+  return false;
+}
+
+/* ---------------- game ---------------- */
+let qs=[], idx=0, score=0, answered=false, lastTopic="", lastWasWrong=false;
+
+function start(t){
+  $("err").textContent="";
+  if(!t){ $("err").textContent="בחר נושא קודם 🙂"; return; }
+  lastTopic=t;
+  if (synth){ try{ synth.speak(new SpeechSynthesisUtterance("")); }catch(e){} }
+  const pool = t===MIX ? Object.values(BANK).flatMap(x=>x.q) : BANK[t].q;
+  qs = shuffle(pool).slice(0, +$("count").value).map(([q,a,acc,rej])=>({q,a,accept:acc,reject:rej||[]}));
+  idx=0; score=0; show("game"); renderQ();
+}
+
+async function renderQ(){
+  answered=false; lastWasWrong=false; $("mic").disabled=false;
+  document.body.className="";
+  const q=qs[idx];
+  $("qnum").textContent=`שאלה ${idx+1}/${qs.length}`;
+  $("scorePill").textContent=`⭐ ${score}`;
+  $("bar").style.width=(idx/qs.length*100)+"%";
+  $("question").textContent=q.q;
+  $("result").className="result"; $("result").innerHTML="";
+  $("next").classList.add("hidden"); $("override").classList.add("hidden");
+  $("answerArea").classList.remove("hidden");
+  $("heard").textContent=""; $("typed").value="";
+  $("mic").classList.toggle("hidden", !SR);
+  const showTyped = !SR || micBlocked;
+  $("typedBox").classList.toggle("hidden", !showTyped);
+  $("kbdHint").classList.toggle("hidden", !showTyped);
+  $("typed").disabled=false; $("sendTyped").disabled=false;
+  $("status").textContent="🔊 מקריא…";
+  await say(q.q);
+  if(!answered && !listening && !$("repeat").classList.contains("nudge")) $("status").textContent = SR ? "לחץ על המיקרופון ותגיד את התשובה" : "מה התשובה?";
+}
+
+async function submit(said){
+  if(answered) return;
+  answered=true;
+  $("mic").disabled=true; $("typed").disabled=true; $("sendTyped").disabled=true;
+  $("heard").textContent = "אמרת: " + said[0];
+  const q=qs[idx];
+  const ok = localMatch(q,said);
+  $("status").textContent="";
+  reveal(ok);
+}
+
+function reveal(ok){
+  const q=qs[idx], r=$("result");
+  $("answerArea").classList.add("hidden");
+  if(ok){
+    score++;
+    document.body.className="ok";
+    r.className="result ok"; r.textContent="✅ נכון! כל הכבוד";
+    say("נכון! כל הכבוד");
+  } else {
+    lastWasWrong=true;
+    document.body.className="bad";
+    r.className="result bad"; r.textContent="❌ לא נכון. התשובה הנכונה: "+q.a;
+    $("override").classList.remove("hidden");
+    say("לא נכון. התשובה הנכונה היא: "+q.a);
+  }
+  $("scorePill").textContent=`⭐ ${score}`;
+  $("next").textContent = idx+1<qs.length ? "הבא ←" : "לתוצאות 🏁";
+  $("next").classList.remove("hidden");
+}
+
+$("override").onclick=()=>{
+  if(!lastWasWrong) return;
+  lastWasWrong=false; score++;
+  document.body.className="ok";
+  const r=$("result"); r.className="result ok"; r.textContent="✅ אוקיי, נספר כנכון!";
+  $("override").classList.add("hidden");
+  $("scorePill").textContent=`⭐ ${score}`;
+  if(synth) synth.cancel();
+};
+
+function next(){ if(synth) synth.cancel(); if(idx+1<qs.length){ idx++; renderQ(); } else finish(); }
+function finish(){
+  document.body.className="";
+  const pct=score/qs.length;
+  $("final").textContent=`${score}/${qs.length}`;
+  const [e,m] = pct===1?["🏆","מושלם! אלוף!"]:pct>=.7?["🌟","מעולה!"]:pct>=.4?["👍","יפה! עוד סיבוב ותשתפר."]:["💪","לא נורא, ככה לומדים. עוד סיבוב?"];
+  $("emoji").textContent=e; $("msg").textContent=m;
+  show("results");
+  say(`סיימת! צברת ${score} מתוך ${qs.length}. ${m}`);
+}
+
+$("start").onclick=()=>start(topic);
+$("repeat").onclick=()=>{ speakHint(false); if(synth) try{synth.cancel();}catch(e){} if(!answered) say(qs[idx].q); else say("התשובה הנכונה היא: "+qs[idx].a); };
+$("next").onclick=next;
+$("again").onclick=()=>start(lastTopic);
+$("newTopic").onclick=()=>{ if(synth) synth.cancel(); show("setup"); };
+document.addEventListener("keydown",e=>{
+  if($("game").classList.contains("hidden")) return;
+  if(e.target.tagName==="INPUT") return;
+  if(e.code==="Space"){ e.preventDefault(); if(!answered) $("mic").click(); }
+  else if(e.key==="Enter" && answered) next();
+});
+</script>
+</body>
+</html>
