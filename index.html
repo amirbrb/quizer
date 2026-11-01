@@ -63,6 +63,13 @@
   .topic.sel{border-color:var(--accent);background:rgba(124,108,255,.18)}
   .btn.nudge{background:var(--accent2);color:#1a1300;animation:pulse2 1s infinite}
   @keyframes pulse2{0%{box-shadow:0 0 0 0 rgba(255,184,77,.7)}100%{box-shadow:0 0 0 16px rgba(255,184,77,0)}}
+  .timer{display:flex;align-items:center;gap:10px;margin:-8px 0 18px}
+  .timer span{font-weight:800;font-size:1.3rem;min-width:2ch;text-align:center;display:inline-block}
+  .tbar{flex:1;height:10px;background:#252b55;border-radius:99px;overflow:hidden}
+  .tbar i{display:block;height:100%;width:100%;background:var(--ok);transition:width .1s linear}
+  .timer.urgent span{color:var(--bad);animation:beat .5s infinite}
+  .timer.urgent .tbar i{background:var(--bad)}
+  @keyframes beat{50%{transform:scale(1.3)}}
   .hidden{display:none!important}
 </style>
 </head>
@@ -98,6 +105,7 @@
       <button class="btn ghost" id="repeat" title="הקרא">🔊 הקרא</button>
     </div>
     <div class="progress"><i id="bar"></i></div>
+    <div class="timer" id="timerBox"><span id="tnum">15</span><div class="tbar"><i id="tbar"></i></div></div>
     <div class="note hidden" id="voiceNote" style="margin:0 0 16px;background:#3a2a10;padding:10px 12px;border-radius:10px;color:#ffd79a"></div>
     <p class="q" id="question"></p>
 
@@ -436,6 +444,60 @@ $("mic").onclick = () => { if (listening && rec) rec.stop(); else listen(); };
 $("sendTyped").onclick = () => { const v=$("typed").value.trim(); if(v) submit([v]); };
 $("typed").addEventListener("keydown", e=>{ if(e.key==="Enter") $("sendTyped").click(); });
 
+/* ---------------- timer & sound ---------------- */
+const TIME = 15;
+let timerId = null, deadline = 0, spokenNums = {};
+let actx = null;
+function audioCtx(){
+  try{
+    if(!actx) actx = new (window.AudioContext || window.webkitAudioContext)();
+    if(actx.state === "suspended") actx.resume();
+  }catch(e){}
+  return actx;
+}
+function failSound(){
+  const c = audioCtx(); if(!c) return;
+  try{
+    const t0 = c.currentTime + 0.02;
+    [[392,0,.28],[370,.3,.28],[349,.6,.28],[330,.9,.75]].forEach(([f,st,d])=>{
+      const o = c.createOscillator(), g = c.createGain();
+      o.type = "sawtooth";
+      o.frequency.setValueAtTime(f, t0+st);
+      if(d > .5) o.frequency.linearRampToValueAtTime(f*0.93, t0+st+d);
+      g.gain.setValueAtTime(0.0001, t0+st);
+      g.gain.exponentialRampToValueAtTime(0.16, t0+st+0.03);
+      g.gain.exponentialRampToValueAtTime(0.0001, t0+st+d);
+      o.connect(g); g.connect(c.destination);
+      o.start(t0+st); o.stop(t0+st+d+0.05);
+    });
+  }catch(e){}
+}
+function stopTimer(){ if(timerId){ clearInterval(timerId); timerId = null; } }
+function startTimer(){
+  stopTimer();
+  deadline = Date.now() + TIME*1000; spokenNums = {};
+  tick(); timerId = setInterval(tick, 100);
+}
+function tick(){
+  const left = Math.max(0, (deadline - Date.now())/1000);
+  const secs = Math.ceil(left);
+  $("tnum").textContent = secs;
+  $("tbar").style.width = (left/TIME*100) + "%";
+  $("timerBox").classList.toggle("urgent", left <= 3);
+  if(secs >= 1 && secs <= 3 && !spokenNums[secs]){
+    spokenNums[secs] = true;
+    say(["","אחד","שתיים","שלוש"][secs]);
+  }
+  if(left <= 0){ stopTimer(); timeUp(); }
+}
+function timeUp(){
+  if(answered) return;
+  answered = true;
+  if(listening && rec){ try{ rec.abort(); }catch(e){} }
+  failSound();
+  reveal(false, true);
+}
+
 /* ---------------- local matching ---------------- */
 function norm(s){
   return (s||"").toLowerCase()
@@ -483,6 +545,7 @@ function start(t){
   if(!t){ $("err").textContent="בחר נושא קודם 🙂"; return; }
   lastTopic=t;
   if (synth){ try{ synth.speak(new SpeechSynthesisUtterance("")); }catch(e){} }
+  audioCtx();
   const lvl = $("level").value;
   const topics = t===MIX ? Object.keys(BANK) : [t];
   const pool = topics.flatMap(k => lvl==="easy" ? BANK[k].q : lvl==="hard" ? HARD[k] : [...BANK[k].q, ...HARD[k]]);
@@ -498,6 +561,7 @@ async function renderQ(){
   $("scorePill").textContent=`⭐ ${score}`;
   $("bar").style.width=(idx/qs.length*100)+"%";
   $("question").textContent=q.q;
+  startTimer();
   $("result").className="result"; $("result").innerHTML="";
   $("next").classList.add("hidden"); $("override").classList.add("hidden");
   $("answerArea").classList.remove("hidden");
@@ -515,6 +579,7 @@ async function renderQ(){
 async function submit(said){
   if(answered) return;
   answered=true;
+  stopTimer();
   $("mic").disabled=true; $("typed").disabled=true; $("sendTyped").disabled=true;
   $("heard").textContent = "אמרת: " + said[0];
   const q=qs[idx];
@@ -523,7 +588,7 @@ async function submit(said){
   reveal(ok);
 }
 
-function reveal(ok){
+function reveal(ok, timeout){
   const q=qs[idx], r=$("result");
   $("answerArea").classList.add("hidden");
   if(ok){
@@ -534,9 +599,10 @@ function reveal(ok){
   } else {
     lastWasWrong=true;
     document.body.className="bad";
-    r.className="result bad"; r.textContent="❌ לא נכון. התשובה הנכונה: "+q.a;
-    $("override").classList.remove("hidden");
-    say("לא נכון. התשובה הנכונה היא: "+q.a);
+    r.className="result bad"; r.textContent=(timeout ? "⏰ נגמר הזמן — תשובה לא נכונה. התשובה הנכונה: " : "❌ לא נכון. התשובה הנכונה: ")+q.a;
+    if(!timeout) $("override").classList.remove("hidden");
+    if(timeout) setTimeout(()=>say("תשובה לא נכונה. התשובה הנכונה היא: "+q.a), 1700);
+    else say("לא נכון. התשובה הנכונה היא: "+q.a);
   }
   $("scorePill").textContent=`⭐ ${score}`;
   $("next").textContent = idx+1<qs.length ? "הבא ←" : "לתוצאות 🏁";
@@ -553,8 +619,9 @@ $("override").onclick=()=>{
   if(synth) synth.cancel();
 };
 
-function next(){ if(synth) synth.cancel(); if(idx+1<qs.length){ idx++; renderQ(); } else finish(); }
+function next(){ stopTimer(); if(synth) synth.cancel(); if(idx+1<qs.length){ idx++; renderQ(); } else finish(); }
 function finish(){
+  stopTimer();
   document.body.className="";
   const pct=score/qs.length;
   $("final").textContent=`${score}/${qs.length}`;
@@ -568,7 +635,7 @@ $("start").onclick=()=>start(topic);
 $("repeat").onclick=()=>{ speakHint(false); if(synth) try{synth.cancel();}catch(e){} if(!answered) say(qs[idx].q); else say("התשובה הנכונה היא: "+qs[idx].a); };
 $("next").onclick=next;
 $("again").onclick=()=>start(lastTopic);
-$("newTopic").onclick=()=>{ if(synth) synth.cancel(); show("setup"); };
+$("newTopic").onclick=()=>{ stopTimer(); if(synth) synth.cancel(); show("setup"); };
 document.addEventListener("keydown",e=>{
   if($("game").classList.contains("hidden")) return;
   if(e.target.tagName==="INPUT") return;
